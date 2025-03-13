@@ -668,7 +668,7 @@
 #endif
 
 /*GIF decoder library*/
-#define LV_USE_GIF 0
+#define LV_USE_GIF 1
 #if LV_USE_GIF
     #define LV_GIF_USE_PSRAM 0           /* 0: use default sram memory, 1: use psram memory. */
 #endif

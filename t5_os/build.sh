@@ -206,18 +206,21 @@ fi
 
 
 # 业务需求：提前初始化gpio
-echo "111111111111111111111111111"
-default_gpio_file=${TUYA_PROJECT_DIR}/apps/$APP_BIN_NAME/default_gpio_config.json
-out_file_path=${TUYA_PROJECT_DIR}/vendor/T5/t5_os/projects/tuya_app/config/bk7258/
+app_config_file=${TUYA_PROJECT_DIR}/apps/$APP_BIN_NAME/default_gpio_config.json
+out_file_path=${TUYA_PROJECT_DIR}/vendor/T5/t5_os/projects/tuya_app/config
 vendor_config_file=projects/tuya_app/tuya_scripts/tuya_gpio_config.json
 vendor_convert_script=projects/tuya_app/tuya_scripts/default_gpio_config.py
-if [ ! -f ${default_gpio_file} ]; then
-    cp ${vendor_config_file} ${default_gpio_file}
+echo "python3 ${vendor_convert_script} ${out_file_path} ${vendor_config_file} ${app_config_file}"
+python3 ${vendor_convert_script} ${out_file_path} ${vendor_config_file} ${app_config_file}
+if [ -f ${out_file_path}/usr_gpio_cfg0.h ]; then
+    mv ${out_file_path}/usr_gpio_cfg0.h ${out_file_path}/bk7258/usr_gpio_cfg.h
 fi
-python3 ${vendor_convert_script} $default_gpio_file $out_file_path
-echo "python3 ${vendor_convert_script} $default_gpio_file $out_file_path"
-echo "222222222222222222222222222"
-
+if [ -f ${out_file_path}/usr_gpio_cfg1.h ]; then
+    mv ${out_file_path}/usr_gpio_cfg1.h ${out_file_path}/bk7258_cp1/usr_gpio_cfg.h
+fi
+if [ -f ${out_file_path}/usr_gpio_cfg2.h ]; then
+    mv ${out_file_path}/usr_gpio_cfg2.h ${out_file_path}/bk7258_cp2/usr_gpio_cfg.h
+fi
 
 echo "Start Compile"
 
@@ -311,6 +314,21 @@ if [ -e "./build/${TARGET_PLATFORM}/all-app.bin" ]; then
     ./${TUYA_DIFF_OTA_BIN_TOOL} ./build/${TARGET_PLATFORM}/app_ug.bin ./build/${TARGET_PLATFORM}/app_ug.bin ./build/${TARGET_PLATFORM}/app_ota_ug.bin 0
 
     # rm pad_bin_file
+
+    set -x
+    # 在固件尾部追加固件校验信息
+    script_file=${TUYA_PROJECT_DIR}/scripts/write_verid_to_bin.py
+    if [ "x" != "x$TUYAOS_VERSION_ID" ] && [ -f ${script_file} ]; then
+        echo "add info to file tail"
+        cp ./build/${TARGET_PLATFORM}/all-app.bin      $DEBUG_FILE_PATH/${TARGET_PLATFORM}/ori-all-app.bin
+        cp ./build/${TARGET_PLATFORM}/app_ota_ug.bin   $DEBUG_FILE_PATH/${TARGET_PLATFORM}/ori-app_ota_ug.bin
+
+        cd ./build/${TARGET_PLATFORM}
+        python3 ${script_file} all-app.bin
+        python3 ${script_file} app_ota_ug.bin
+        echo "add info end"
+        cd -
+    fi
 
     cp ./build/${TARGET_PLATFORM}/all-app.bin       $OUTPUT_PATH/$APP_BIN_NAME"_QIO_"$USER_SW_VER.bin
     cp ./build/${TARGET_PLATFORM}/ua_file.bin       $OUTPUT_PATH/$APP_BIN_NAME"_UA_"$USER_SW_VER.bin

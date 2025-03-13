@@ -936,6 +936,10 @@ bk_err_t bk_aud_intf_voc_init(aud_intf_voc_setup_t setup)
     }
     // Modified by TUYA End
 
+    // Modified by TUYA Start
+    aud_intf_info.voc_info.mic2_disable = setup.mic2_disable;
+    // Modified by TUYA End
+
 	aud_intf_info.voc_info.aud_setup.mic_frame_number = 2;
 	aud_intf_info.voc_info.aud_setup.speaker_frame_number = 2;
 	aud_intf_info.voc_info.aud_setup.spk_mode = setup.spk_mode;

@@ -683,7 +683,7 @@ int media_ipc_init(void)
 								4,
 								"ipc thread",
 								(beken_thread_function_t)media_ipc_thread_entry,
-								2048,
+								8192,   //2048,
 								NULL);
 
 

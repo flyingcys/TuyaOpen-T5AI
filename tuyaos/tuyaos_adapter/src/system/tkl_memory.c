@@ -12,15 +12,18 @@
 #include <os/mem.h>
 
 #define CONFIG_HAVE_PSRAM 1
-#if defined(CONFIG_HAVE_PSRAM) && (CONFIG_HAVE_PSRAM == 1)
-#define CONFIG_PSRAM_MALLOC_FORCE 0
-#endif
 extern void *tkl_system_calloc(size_t nitems, size_t size);
 extern void *tkl_system_realloc(void* ptr, size_t size);
 extern void *tkl_system_psram_malloc(const SIZE_T size);
 extern void tkl_system_psram_free(void* ptr);
 
 extern void bk_printf(const char *fmt, ...);
+
+static BOOL_T s_psram_malloc_force = FALSE;
+void tkl_system_psram_malloc_force_set(BOOL_T enable)
+{
+    s_psram_malloc_force = enable;
+}
 
 /**
 * @brief Alloc memory of system
@@ -33,9 +36,9 @@ extern void bk_printf(const char *fmt, ...);
 */
 void* tkl_system_malloc(const SIZE_T size)
 {
-#if CONFIG_PSRAM_MALLOC_FORCE
-    return tkl_system_psram_malloc(size);
-#else
+    if (s_psram_malloc_force) {
+        return tkl_system_psram_malloc(size);
+    } else {
     void* ptr = os_malloc(size);
     if(NULL == ptr) {
         bk_printf("tkl_system_malloc failed, size(%d)!\r\n", size);
@@ -45,8 +48,8 @@ void* tkl_system_malloc(const SIZE_T size)
         bk_printf("tkl_system_malloc big memory, size(%d)!\r\n", size);
     }
 
-    return ptr;
-#endif
+        return ptr;
+    }
 }
 
 /**
@@ -60,11 +63,11 @@ void* tkl_system_malloc(const SIZE_T size)
 */
 void tkl_system_free(void* ptr)
 {
-#if CONFIG_PSRAM_MALLOC_FORCE
-    tkl_system_psram_free(ptr);
-#else
-    os_free(ptr);
-#endif
+    if (s_psram_malloc_force) {
+        tkl_system_psram_free(ptr);
+    } else {
+        os_free(ptr);
+    }
 }
 
 /**
@@ -103,26 +106,25 @@ void *tkl_system_memcpy(void* src, const void* dst, const SIZE_T n)
  */
 void *tkl_system_calloc(size_t nitems, size_t size)
 {	
-#if CONFIG_PSRAM_MALLOC_FORCE
-	if (size && nitems > (~(size_t) 0) / size)
-		return NULL;
+    if (s_psram_malloc_force) {
+        if (size && nitems > (~(size_t) 0) / size)
+            return NULL;
 
-    void *ptr = tkl_system_psram_malloc(nitems * size);
-    if (ptr == NULL) {
-        bk_printf("tkl_system_calloc failed, total_size(%d)! nitems = %d size = %d\r\n", nitems * size,nitems,size);
-    }
-    os_memset(ptr, 0, nitems * size);
-    return ptr;
-#else
-	if (size && nitems > (~(size_t) 0) / size)
-		return NULL;
+        void *ptr = psram_zalloc(nitems * size);
+        if (ptr == NULL) {
+            bk_printf("tkl_system_calloc failed, total_size(%d)! nitems = %d size = %d\r\n", nitems * size,nitems,size);
+        }
+        return ptr;
+    } else {
+        if (size && nitems > (~(size_t) 0) / size)
+            return NULL;
 
-	void *ptr =  os_zalloc(nitems * size);
-    if (ptr == NULL) {
-        bk_printf("tkl_system_calloc failed, total_size(%d)! nitems = %d size = %d\r\n", nitems * size,nitems,size);
+        void *ptr =  os_zalloc(nitems * size);
+        if (ptr == NULL) {
+            bk_printf("tkl_system_calloc failed, total_size(%d)! nitems = %d size = %d\r\n", nitems * size,nitems,size);
+        }
+        return ptr;
     }
-    return ptr;
-#endif
 }
 
 /**
@@ -133,20 +135,11 @@ void *tkl_system_calloc(size_t nitems, size_t size)
  */
 void *tkl_system_realloc(void* ptr, size_t size)
 {
-#if CONFIG_PSRAM_MALLOC_FORCE
-    if (size == 0) {
-        tkl_system_psram_free(ptr);
-        return NULL;
+    if (s_psram_malloc_force) {
+        return bk_psram_realloc(ptr, size);
+    } else {
+        return os_realloc(ptr, size);
     }
-
-    ptr = tkl_system_psram_malloc(size);
-    if (ptr == NULL) {
-        bk_printf("tkl_system_realloc failed, size(%d)!\r\n", size);
-    }
-    return ptr;
-#else
-    return os_realloc(ptr, size);
-#endif
 }
 
 /**
