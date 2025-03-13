@@ -118,7 +118,7 @@ disable_python_env() {
 
 check_python_install ||  { echo "Failed to check python environment."; exit 1; }
 
-bash t5_os/toolchain_get.sh $(pwd)/../tools || { echo "Failed to setup toolchain."; exit 1; } 
+bash ./toolchain_get.sh $(pwd)/../tools || { echo "Failed to setup toolchain."; exit 1; } 
 
 enable_python_env "tuya_build_env" || { echo "Failed to enable python virtual environment."; exit 1; }
 

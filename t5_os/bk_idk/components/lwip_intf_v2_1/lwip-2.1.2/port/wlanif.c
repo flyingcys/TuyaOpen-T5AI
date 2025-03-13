@@ -156,15 +156,38 @@ static void low_level_init(struct netif *netif)
  *       to become availale since the stack doesn't retry to send a packet
  *       dropped because of memory failure (except for the TCP timers).
  */
+#define TY_LWIP_TLS_DEBUG 0
+#if TY_LWIP_TLS_DEBUG
+#include "tal_log.h"
+#endif
 static err_t low_level_output(struct netif *netif, struct pbuf *p)
 {
     int ret;
     err_t err = ERR_OK;
     uint8_t vif_idx = wifi_netif_vif_to_vifid(netif->state);
 
-    // Sanity check
-    if (vif_idx == 0xff)
-        return ERR_ARG;
+#if TY_LWIP_TLS_DEBUG
+    // check tls header
+    if (p->len > 14 + 20 + 20) {
+        uint8_t *tls_header = p->payload;
+        uint16_t ip_len = (tls_header[14 + 2] << 8) + (uint16_t)tls_header[14 + 3];
+        uint16_t ip_hlen = (tls_header[14] & 0x0f) * 4;
+        uint16_t tcp_hlen = ((tls_header[14 + ip_hlen + 12] & 0xf0) >> 4) * 4;
+        // dest port == 443 in tcp header
+        uint16_t src_port = (tls_header[14 + ip_hlen] << 8) + tls_header[14 + ip_hlen + 1];
+        uint16_t dst_port = (tls_header[14 + ip_hlen + 2] << 8 ) + tls_header[14 + ip_hlen + 3];
+        uint16_t tcp_len = ip_len - ip_hlen - tcp_hlen;
+        tls_header += 14 + ip_hlen + tcp_hlen;
+        TAL_PR_DEBUG("len:%d, tot_len:%u, ip_len:%d, port:%d->%d, ip_hlen:%d, tcp_hlen:%d, tcp_len:%u, tls_header:%p, tls_header[0]:%02x, tls_header[1]:%02x, tls_header[2]:%02x",
+            p->len, p->tot_len, ip_len, src_port, dst_port, ip_hlen, tcp_hlen, tcp_len, tls_header, tls_header[0], tls_header[1], tls_header[2]);
+        if (dst_port == 443 && tcp_len !=0 && (tls_header[0] != 0x17 || tls_header[1] != 0x03 || tls_header[2] != 0x03)) {
+            TAL_PR_HEXDUMP_ERR("tls header may incorrect, raw data:", p->payload, 128);
+        }
+    }
+#endif
+	// Sanity check
+	if (vif_idx == 0xff)
+		return ERR_ARG;
 
 #if CONFIG_WIFI6_CODE_STACK
     //LWIP_LOGI("output:%x\r\n", p);

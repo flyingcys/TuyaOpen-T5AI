@@ -386,6 +386,7 @@ tcp_write_checks(struct tcp_pcb *pcb, u16_t len)
  * - TCP_WRITE_FLAG_MORE (0x02) for TCP connection, PSH flag will not be set on last segment sent,
  * @return ERR_OK if enqueued, another err_t on error
  */
+#include "tal_log.h"
 err_t
 tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
 {
@@ -512,7 +513,8 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
     LWIP_ASSERT("inconsistent oversize vs. len", (oversize == 0) || (pos == len));
 #endif /* TCP_OVERSIZE */
 
-#if !LWIP_NETIF_TX_SINGLE_PBUF
+#if 0
+// #if !LWIP_NETIF_TX_SINGLE_PBUF
     /*
      * Phase 2: Chain a new pbuf to the end of pcb->unsent.
      *

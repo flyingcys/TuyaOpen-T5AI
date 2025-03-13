@@ -46,6 +46,7 @@ set(incs
     "include/lvgl"
     "include/wired"
     "include/ipc"
+    "include/vad"
     )
 
 string(REPLACE " " ";" TUYA_HEADER_DIR_LIST $ENV{TUYA_HEADER_DIR})
@@ -56,28 +57,8 @@ endforeach()
 
 if ("${CONFIG_CPU_INDEX}" STREQUAL "0")
     list(APPEND srcs
-        src/driver/tkl_lwip.c
-        src/driver/tkl_adc.c
-        src/driver/tkl_hci.c
-        src/driver/tkl_pwm.c
-        src/driver/tkl_uart.c
-        src/driver/tkl_watchdog.c
-        src/driver/tkl_wifi.c
         src/driver/tkl_wakeup.c
-        src/driver/encrypt.c
-	src/driver/tkl_wired.c
-        include/init/src/tkl_init_system.c
-        include/init/src/tkl_init_common.c
-        include/init/src/tkl_init_network.c
-        include/init/src/tkl_init_wifi.c
-	include/init/src/tkl_init_wired.c
-        include/utilities/src/tuya_hashmap.c
-        include/utilities/src/tuya_ringbuf.c
-        include/utilities/src/tuya_smartpointer.c
-        include/utilities/src/tuya_queue.c
-        include/utilities/src/tuya_mem_heap.c
-        include/utilities/src/tuya_list.c
-        include/utilities/src/tuya_tools.c
+        src/misc/ty_vad_app.c
     )
 endif()
 
@@ -125,6 +106,27 @@ if (NOT "${CONFIG_CPU_INDEX}" STREQUAL "2")
         src/misc/sflash.c
         src/misc/fs_init.c
         src/misc/tuya_tkl_ipc.c
+        src/driver/tkl_lwip.c
+        src/driver/tkl_adc.c
+        src/driver/tkl_hci.c
+        src/driver/tkl_pwm.c
+        src/driver/tkl_uart.c
+        src/driver/tkl_watchdog.c
+        src/driver/tkl_wifi.c
+        src/driver/encrypt.c
+	    src/driver/tkl_wired.c
+        include/init/src/tkl_init_system.c
+        include/init/src/tkl_init_common.c
+        include/init/src/tkl_init_network.c
+        include/init/src/tkl_init_wifi.c
+	    include/init/src/tkl_init_wired.c
+        include/utilities/src/tuya_hashmap.c
+        include/utilities/src/tuya_ringbuf.c
+        include/utilities/src/tuya_smartpointer.c
+        include/utilities/src/tuya_queue.c
+        include/utilities/src/tuya_mem_heap.c
+        include/utilities/src/tuya_list.c
+        include/utilities/src/tuya_tools.c
     )
 endif()
 
@@ -156,3 +158,6 @@ foreach(lib ${tuya_libs})
     add_prebuilt_library(${lib_name} "$ENV{TUYA_LIBS_DIR}/${lib_name}")
     target_link_libraries(${COMPONENT_LIB} INTERFACE ${lib_name})
 endforeach()
+
+add_prebuilt_library(libvad.a "include/vad/lib/libvad.a")
+target_link_libraries(${COMPONENT_LIB} INTERFACE libvad.a)
